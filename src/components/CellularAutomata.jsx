@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -67,9 +67,23 @@ const CellularAutomata = () => {
     });
   }, [grid, cellSize, cellColor]);
 
+  // Contar vecinos vivos
+  const countNeighbors = useCallback((x, y, currentGrid) => {
+    let count = 0;
+    for (let i = -1; i <= 1; i++) {
+      for (let j = -1; j <= 1; j++) {
+        if (i === 0 && j === 0) continue;
+        const newY = (y + i + gridSize.height) % gridSize.height;
+        const newX = (x + j + gridSize.width) % gridSize.width;
+        if (currentGrid[newY][newX]) count++;
+      }
+    }
+    return count;
+  });
+
   // Calcular siguiente generación
-  const nextGeneration = () => {
-    const currentGrid = [...grid];
+  const nextGeneration = useCallback(() => {
+    const currentGrid = JSON.parse(JSON.stringify(grid));
     const newGrid = currentGrid.map((row, y) =>
       row.map((cell, x) => {
         const neighbors = countNeighbors(x, y, currentGrid);
@@ -84,21 +98,7 @@ const CellularAutomata = () => {
     setPopulationHistory((prev) => [...prev, population]);
     setGrid(newGrid);
     setGeneration((prev) => prev + 1);
-  };
-
-  // Contar vecinos vivos
-  const countNeighbors = (x, y, currentGrid) => {
-    let count = 0;
-    for (let i = -1; i <= 1; i++) {
-      for (let j = -1; j <= 1; j++) {
-        if (i === 0 && j === 0) continue;
-        const newY = (y + i + gridSize.height) % gridSize.height;
-        const newX = (x + j + gridSize.width) % gridSize.width;
-        if (currentGrid[newY][newX]) count++;
-      }
-    }
-    return count;
-  };
+  }, [grid, countNeighbors]);
 
   // Manejar click en el canvas
   const handleCanvasClick = (event) => {
@@ -116,38 +116,19 @@ const CellularAutomata = () => {
 
   // Iniciar/Detener simulación
   const toggleSimulation = () => {
-    if (isRunning) {
-      if (intervalId) {
-        clearInterval(intervalId);
-        setIntervalId(null);
-      }
-    } else {
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-      const id = setInterval(nextGeneration, simulationSpeed);
-      setIntervalId(id);
-    }
     setIsRunning(!isRunning);
   };
 
-  // Efecto para manejar cambios en la velocidad de simulación
+  // Efecto para manejar la simulación y cambios de velocidad
   useEffect(() => {
-    if (isRunning && intervalId) {
-      clearInterval(intervalId);
-      const id = setInterval(nextGeneration, simulationSpeed);
-      setIntervalId(id);
+    let id = null;
+    if (isRunning) {
+      id = setInterval(nextGeneration, simulationSpeed);
     }
-  }, [simulationSpeed]);
-
-  // Limpiar el intervalo cuando el componente se desmonte
-  useEffect(() => {
     return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
+      if (id) clearInterval(id);
     };
-  }, [intervalId]);
+  }, [isRunning, simulationSpeed, nextGeneration]);
 
   // Limpiar grid
   const clearGrid = () => {
