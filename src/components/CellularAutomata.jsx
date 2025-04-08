@@ -56,11 +56,16 @@ const CellularAutomata = () => {
     ctx.fillStyle = "#000000";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Dibujar células vivas
-    ctx.fillStyle = cellColor;
+    // Dibujar células y bordes
     grid.forEach((row, y) => {
       row.forEach((cell, x) => {
+        // Dibujar borde para todas las células
+        ctx.strokeStyle = "#333333";
+        ctx.strokeRect(x * scale, y * scale, scale, scale);
+
+        // Rellenar células vivas
         if (cell) {
+          ctx.fillStyle = cellColor;
           ctx.fillRect(x * scale, y * scale, scale, scale);
         }
       });
