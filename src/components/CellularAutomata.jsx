@@ -67,38 +67,58 @@ const CellularAutomata = () => {
     });
   }, [grid, cellSize, cellColor]);
 
+  const [boundaryType, setBoundaryType] = useState("toroidal");
+
   // Contar vecinos vivos
-  const countNeighbors = useCallback((x, y, currentGrid) => {
-    let count = 0;
-    for (let i = -1; i <= 1; i++) {
-      for (let j = -1; j <= 1; j++) {
-        if (i === 0 && j === 0) continue;
-        const newY = (y + i + gridSize.height) % gridSize.height;
-        const newX = (x + j + gridSize.width) % gridSize.width;
-        if (currentGrid[newY][newX]) count++;
+  const countNeighbors = useCallback(
+    (x, y, currentGrid) => {
+      let count = 0;
+      for (let i = -1; i <= 1; i++) {
+        for (let j = -1; j <= 1; j++) {
+          if (i === 0 && j === 0) continue;
+
+          if (boundaryType === "toroidal") {
+            const newY = (y + i + gridSize.height) % gridSize.height;
+            const newX = (x + j + gridSize.width) % gridSize.width;
+            if (currentGrid[newY][newX]) count++;
+          } else {
+            const newY = y + i;
+            const newX = x + j;
+            if (
+              newY >= 0 &&
+              newY < gridSize.height &&
+              newX >= 0 &&
+              newX < gridSize.width
+            ) {
+              if (currentGrid[newY][newX]) count++;
+            }
+          }
+        }
       }
-    }
-    return count;
-  });
+      return count;
+    },
+    [boundaryType, gridSize]
+  );
 
   // Calcular siguiente generación
   const nextGeneration = useCallback(() => {
-    const currentGrid = JSON.parse(JSON.stringify(grid));
-    const newGrid = currentGrid.map((row, y) =>
-      row.map((cell, x) => {
-        const neighbors = countNeighbors(x, y, currentGrid);
-        if (cell) {
-          return neighbors === 2 || neighbors === 3;
-        }
-        return neighbors === 3;
-      })
-    );
+    setGrid((prevGrid) => {
+      const newGrid = prevGrid.map((row, y) =>
+        row.map((cell, x) => {
+          const neighbors = countNeighbors(x, y, prevGrid);
+          if (cell) {
+            return neighbors === 2 || neighbors === 3;
+          }
+          return neighbors === 3;
+        })
+      );
 
-    const population = newGrid.flat().filter((cell) => cell).length;
-    setPopulationHistory((prev) => [...prev, population]);
-    setGrid(newGrid);
-    setGeneration((prev) => prev + 1);
-  }, [grid, countNeighbors]);
+      const population = newGrid.flat().filter((cell) => cell).length;
+      setPopulationHistory((prev) => [...prev, population]);
+      setGeneration((prev) => prev + 1);
+      return newGrid;
+    });
+  }, [countNeighbors]);
 
   // Manejar click en el canvas
   const handleCanvasClick = (event) => {
@@ -194,6 +214,16 @@ const CellularAutomata = () => {
           onChange={(e) => setCellSize(Number(e.target.value))}
           className="w-32"
         />
+        <button
+          onClick={() =>
+            setBoundaryType((prev) =>
+              prev === "toroidal" ? "null" : "toroidal"
+            )
+          }
+          className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+        >
+          {boundaryType === "toroidal" ? "Frontera Toroidal" : "Frontera Nula"}
+        </button>
         <button
           onClick={toggleSimulation}
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
