@@ -117,11 +117,14 @@ const CellularAutomata = () => {
           return neighbors === 3;
         })
       );
+      return newGrid;
+    });
 
-      const population = newGrid.flat().filter((cell) => cell).length;
+    setGrid((currentGrid) => {
+      const population = currentGrid.flat().filter((cell) => cell).length;
       setPopulationHistory((prev) => [...prev, population]);
       setGeneration((prev) => prev + 1);
-      return newGrid;
+      return currentGrid;
     });
   }, [countNeighbors]);
 
@@ -257,7 +260,7 @@ const CellularAutomata = () => {
           <span className="text-sm">Velocidad:</span>
           <input
             type="range"
-            min="200"
+            min="50"
             max="2000"
             step="100"
             value={simulationSpeed}
