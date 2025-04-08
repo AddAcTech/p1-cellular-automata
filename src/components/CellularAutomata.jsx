@@ -69,9 +69,10 @@ const CellularAutomata = () => {
 
   // Calcular siguiente generación
   const nextGeneration = () => {
-    const newGrid = grid.map((row, y) =>
+    const currentGrid = [...grid];
+    const newGrid = currentGrid.map((row, y) =>
       row.map((cell, x) => {
-        const neighbors = countNeighbors(x, y);
+        const neighbors = countNeighbors(x, y, currentGrid);
         if (cell) {
           return neighbors === 2 || neighbors === 3;
         }
@@ -86,14 +87,14 @@ const CellularAutomata = () => {
   };
 
   // Contar vecinos vivos
-  const countNeighbors = (x, y) => {
+  const countNeighbors = (x, y, currentGrid) => {
     let count = 0;
     for (let i = -1; i <= 1; i++) {
       for (let j = -1; j <= 1; j++) {
         if (i === 0 && j === 0) continue;
         const newY = (y + i + gridSize.height) % gridSize.height;
         const newX = (x + j + gridSize.width) % gridSize.width;
-        if (grid[newY][newX]) count++;
+        if (currentGrid[newY][newX]) count++;
       }
     }
     return count;
